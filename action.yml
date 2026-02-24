@@ -1,0 +1,31 @@
+name: Create DNS CNAME Record
+description: >
+  Deploy a CNAME record (feature-xxxx.cust) in the nisportal.com zone pointing
+  to the Front Door endpoint. Enables custom domain validation and managed TLS.
+  Requires an active Azure CLI session.
+
+inputs:
+  feature_name:
+    description: Feature environment name (e.g. feature-1234)
+    required: true
+  fd_hostname:
+    description: Front Door endpoint hostname without https:// (output fd_hostname from deploy-feature)
+    required: true
+  dns_zone_resource_group:
+    description: Resource group containing the nisportal.com DNS zone
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Deploy CNAME record
+      shell: bash
+      run: |
+        az deployment group create \
+          --name "dns-${{ inputs.feature_name }}-$(date +%Y%m%d-%H%M%S)" \
+          --resource-group "${{ inputs.dns_zone_resource_group }}" \
+          --template-file modules/frontdoor-dns.bicep \
+          --parameters \
+            recordName="${{ inputs.feature_name }}.cust" \
+            cnameValue="${{ inputs.fd_hostname }}" \
+            dnsZoneName="nisportal.com"
