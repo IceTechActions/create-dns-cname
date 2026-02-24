@@ -7,13 +7,20 @@
 // This module must be deployed to the DNS zone's resource group
 // (cross-RG from the main deployment).
 //
-// Usage (GitHub Actions step):
+// Usage (GitHub Actions — via IceTechActions/create-dns-cname action):
+//   uses: IceTechActions/create-dns-cname@v1
+//   with:
+//     feature_name: feature-1234
+//     fd_hostname: <fdEndpoint>.z01.azurefd.net
+//     dns_zone_resource_group: $DNS_ZONE_RESOURCE_GROUP
+//
+// Usage (direct CLI):
 //   az deployment group create \
 //     --resource-group "$DNS_ZONE_RESOURCE_GROUP" \
 //     --template-file modules/frontdoor-dns.bicep \
-//     --parameters recordName="feature-1234" \
+//     --parameters recordName="feature-1234.cust" \
 //                  cnameValue="feature-1234.z01.azurefd.net" \
-//                  dnsZoneName="cust.nisportal.com"
+//                  dnsZoneName="nisportal.com"
 //
 // This creates: feature-1234.cust.nisportal.com → CNAME → <fdEndpoint>.z01.azurefd.net
 // ============================================================
