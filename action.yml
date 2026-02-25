@@ -20,4 +20,11 @@ runs:
     - name: Create DNS CNAME record
       shell: bash
       run: |
-        az deployment group create           --name "dns-${{ inputs.feature_name }}-$(date +%Y%m%d-%H%M%S)"           --resource-group "${{ inputs.dns_zone_resource_group }}"           --template-file "${{ github.action_path }}/frontdoor-dns.bicep"           --parameters             recordName="${{ inputs.feature_name }}"             cnameValue="${{ inputs.fd_hostname }}"             dnsZoneName="cust.nisportal.com"
+        az deployment group create \
+          --name "dns-${{ inputs.feature_name }}-$(date +%Y%m%d-%H%M%S)" \
+          --resource-group "${{ inputs.dns_zone_resource_group }}" \
+          --template-file "${{ github.action_path }}/frontdoor-dns.bicep" \
+          --parameters \
+            recordName="${{ inputs.feature_name }}" \
+            cnameValue="${{ inputs.fd_hostname }}" \
+            dnsZoneName="cust.nisportal.com"
