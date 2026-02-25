@@ -18,9 +18,9 @@
 //   az deployment group create \
 //     --resource-group "$DNS_ZONE_RESOURCE_GROUP" \
 //     --template-file modules/frontdoor-dns.bicep \
-//     --parameters recordName="feature-1234.cust" \
+//     --parameters recordName="feature-1234" \
 //                  cnameValue="feature-1234.z01.azurefd.net" \
-//                  dnsZoneName="nisportal.com"
+//                  dnsZoneName="cust.nisportal.com"
 //
 // This creates: feature-1234.cust.nisportal.com → CNAME → <fdEndpoint>.z01.azurefd.net
 // ============================================================
@@ -31,8 +31,8 @@ param recordName string
 @description('The CNAME target - the Front Door endpoint hostname (output frontDoorUrl from main.bicep, strip https://).')
 param cnameValue string
 
-@description('The Azure DNS zone name, e.g., "nisportal.com". The recordName is relative to this zone.')
-param dnsZoneName string = 'nisportal.com'
+@description('The Azure DNS zone name, e.g., "cust.nisportal.com". The recordName is relative to this zone.')
+param dnsZoneName string = 'cust.nisportal.com'
 
 @description('TTL in seconds for the CNAME record.')
 param ttl int = 300

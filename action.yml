@@ -1,6 +1,6 @@
 name: Create DNS CNAME Record
 description: >
-  Create a CNAME record in the nisportal.com zone pointing to the Front Door
+  Create a CNAME record in the cust.nisportal.com zone pointing to the Front Door
   endpoint hostname. Requires an active Azure CLI session.
 
 inputs:
@@ -11,7 +11,7 @@ inputs:
     description: Front Door endpoint hostname (without https://) — from deploy-feature outputs
     required: true
   dns_zone_resource_group:
-    description: Resource group containing the nisportal.com DNS zone
+    description: Resource group containing the cust.nisportal.com DNS zone
     required: true
 
 runs:
@@ -25,6 +25,6 @@ runs:
           --resource-group "${{ inputs.dns_zone_resource_group }}" \
           --template-file "${{ github.action_path }}/frontdoor-dns.bicep" \
           --parameters \
-            recordName="${{ inputs.feature_name }}.cust" \
+            recordName="${{ inputs.feature_name }}" \
             cnameValue="${{ inputs.fd_hostname }}" \
-            dnsZoneName="nisportal.com"
+            dnsZoneName="cust.nisportal.com"
