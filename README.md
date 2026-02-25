@@ -1,6 +1,6 @@
 # create-dns-cname
 
-Creates a DNS CNAME record in the `nisportal.com` Azure DNS zone, pointing `{feature_name}.cust.nisportal.com` at the Front Door endpoint hostname. This triggers Front Door's automatic certificate validation and managed TLS certificate issuance for the custom domain.
+Creates a DNS CNAME record in the `cust.nisportal.com` Azure DNS zone, pointing `{feature_name}.cust.nisportal.com` at the Front Door endpoint hostname. This triggers Front Door's automatic certificate validation and managed TLS certificate issuance for the custom domain.
 
 The action bundles `frontdoor-dns.bicep` — the calling repo does not need any Bicep files.
 
@@ -13,9 +13,9 @@ The action bundles `frontdoor-dns.bicep` — the calling repo does not need any 
 
 | Input | Required | Description |
 |-------|----------|-------------|
-| `feature_name` | Yes | Feature environment name, e.g. `feature-1234`. Creates the record `feature-1234.cust` in the DNS zone. |
+| `feature_name` | Yes | Feature environment name, e.g. `feature-1234`. Creates the record `feature-1234` in the `cust.nisportal.com` zone. |
 | `fd_hostname` | Yes | Front Door endpoint hostname without `https://` — use the `fd_hostname` output from `deploy-feature` |
-| `dns_zone_resource_group` | Yes | Resource group containing the `nisportal.com` DNS zone |
+| `dns_zone_resource_group` | Yes | Resource group containing the `cust.nisportal.com` DNS zone |
 
 ## Usage
 
