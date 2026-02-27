@@ -21,52 +21,12 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Create DNS CNAME record
+    - name: Create DNS records
       shell: bash
-      run: |
-        az deployment group create \
-          --name "dns-${{ inputs.feature_name }}-$(date +%Y%m%d-%H%M%S)" \
-          --resource-group "${{ inputs.dns_zone_resource_group }}" \
-          --template-file "${{ github.action_path }}/frontdoor-dns.bicep" \
-          --parameters \
-            recordName="${{ inputs.feature_name }}" \
-            cnameValue="${{ inputs.fd_hostname }}" \
-            dnsZoneName="cust.nisportal.com"
-
-    - name: Create DNS TXT record for AFD custom domain validation
-      shell: bash
-      run: |
-        DNS_ZONE="cust.nisportal.com"
-        DNS_ZONE_RG="${{ inputs.dns_zone_resource_group }}"
-        RESOURCE_GROUP="${{ inputs.resource_group }}"
-        FEATURE_NAME="${{ inputs.feature_name }}"
-
-        # AFD custom domain resource name: feature-99999-cust-nisportal-com
-        CUSTOM_DOMAIN_NAME=$(echo "${FEATURE_NAME}-${DNS_ZONE}" | tr '.' '-')
-
-        # Find the Front Door Premium profile in the resource group
-        FD_PROFILE=$(az afd profile list \
-          --resource-group "$RESOURCE_GROUP" \
-          --query "[?sku.name=='Premium_AzureFrontDoor'].name | [0]" -o tsv)
-
-        echo "Getting validation token from AFD profile '$FD_PROFILE', custom domain '$CUSTOM_DOMAIN_NAME'..."
-        VALIDATION_TOKEN=$(az afd custom-domain show \
-          --profile-name "$FD_PROFILE" \
-          --resource-group "$RESOURCE_GROUP" \
-          --custom-domain-name "$CUSTOM_DOMAIN_NAME" \
-          --query "validationProperties.validationToken" -o tsv)
-
-        # Remove any existing TXT record (handles re-deploys where token may have changed)
-        az network dns record-set txt delete \
-          --resource-group "$DNS_ZONE_RG" \
-          --zone-name "$DNS_ZONE" \
-          --record-set-name "_dnsauth.${FEATURE_NAME}" \
-          --yes 2>/dev/null || true
-
-        echo "Creating _dnsauth.${FEATURE_NAME}.${DNS_ZONE} TXT record..."
-        az network dns record-set txt add-record \
-          --resource-group "$DNS_ZONE_RG" \
-          --zone-name "$DNS_ZONE" \
-          --record-set-name "_dnsauth.${FEATURE_NAME}" \
-          --value "$VALIDATION_TOKEN"
-        echo "DNS TXT record created — AFD will validate the custom domain and provision the SSL certificate."
+      env:
+        FEATURE_NAME: ${{ inputs.feature_name }}
+        FD_HOSTNAME: ${{ inputs.fd_hostname }}
+        DNS_ZONE_RG: ${{ inputs.dns_zone_resource_group }}
+        RESOURCE_GROUP: ${{ inputs.resource_group }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: bash "${{ github.action_path }}/scripts/create-dns-records.sh"
