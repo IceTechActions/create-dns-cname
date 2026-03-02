@@ -1,9 +1,12 @@
-name: Validate Bicep
+name: Validate
 
 on:
   pull_request:
   push:
     branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   validate:
@@ -15,3 +18,14 @@ jobs:
         run: |
           az bicep build --file frontdoor-dns.bicep --stdout > /dev/null
           echo "✓ frontdoor-dns.bicep"
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install bats
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y bats
+      - name: Run script tests
+        run: bats tests/create-dns-records.bats
