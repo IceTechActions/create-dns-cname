@@ -1,7 +1,8 @@
 name: Create DNS CNAME Record
 description: >
   Create a CNAME record in the cust.nisportal.com zone pointing to the Front Door
-  endpoint hostname. Requires an active Azure CLI session.
+  endpoint hostname, and create the _dnsauth TXT record required for AFD
+  custom domain validation. Requires an active Azure CLI session.
 
 inputs:
   feature_name:
@@ -13,18 +14,19 @@ inputs:
   dns_zone_resource_group:
     description: Resource group containing the cust.nisportal.com DNS zone
     required: true
+  resource_group:
+    description: Resource group containing the Front Door profile
+    required: true
 
 runs:
   using: composite
   steps:
-    - name: Create DNS CNAME record
+    - name: Create DNS records
       shell: bash
-      run: |
-        az deployment group create \
-          --name "dns-${{ inputs.feature_name }}-$(date +%Y%m%d-%H%M%S)" \
-          --resource-group "${{ inputs.dns_zone_resource_group }}" \
-          --template-file "${{ github.action_path }}/frontdoor-dns.bicep" \
-          --parameters \
-            recordName="${{ inputs.feature_name }}" \
-            cnameValue="${{ inputs.fd_hostname }}" \
-            dnsZoneName="cust.nisportal.com"
+      env:
+        FEATURE_NAME: ${{ inputs.feature_name }}
+        FD_HOSTNAME: ${{ inputs.fd_hostname }}
+        DNS_ZONE_RG: ${{ inputs.dns_zone_resource_group }}
+        RESOURCE_GROUP: ${{ inputs.resource_group }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: bash "${{ github.action_path }}/scripts/create-dns-records.sh"
