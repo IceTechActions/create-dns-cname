@@ -28,4 +28,4 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y bats
       - name: Run script tests
-        run: bats tests/create-dns-records.bats
+        run: bats tests/create-dns-records.bats tests/wait-for-cert.bats
