@@ -40,36 +40,17 @@ runs:
         FD_HOSTNAME: ${{ inputs.fd_hostname }}
         DNS_ZONE_RG: ${{ inputs.dns_zone_resource_group }}
         RESOURCE_GROUP: ${{ inputs.resource_group }}
+        DNS_ZONE_NAME: ${{ inputs.dns_zone_name }}
         ACTION_PATH: ${{ github.action_path }}
       run: bash "${{ github.action_path }}/scripts/create-dns-records.sh"
 
     - name: Wait for AFD custom domain certificate
       if: inputs.cert_wait_timeout != '0'
       shell: bash
-      run: |
-        FEATURE="${{ inputs.feature_name }}"
-        RG="${{ inputs.resource_group }}"
-        FD="${{ inputs.front_door_name }}"
-        DNS_ZONE="${{ inputs.dns_zone_name }}"
-        CUSTOM_DOMAIN_NAME=$(echo "${FEATURE}-${DNS_ZONE}" | sed 's/\./-/g')
-        TIMEOUT=${{ inputs.cert_wait_timeout }}
-        ELAPSED=0
-        echo "Waiting for AFD custom domain '${CUSTOM_DOMAIN_NAME}' cert (timeout: ${TIMEOUT}s)..."
-        while [ $ELAPSED -lt $TIMEOUT ]; do
-          RESULT=$(az afd custom-domain show \
-            --profile-name "$FD" \
-            --resource-group "$RG" \
-            --custom-domain-name "$CUSTOM_DOMAIN_NAME" \
-            --query '{validationState:domainValidationState,provisioningState:provisioningState}' \
-            -o json 2>/dev/null || echo '{}')
-          VS=$(echo "$RESULT" | jq -r '.validationState // "Unknown"')
-          PS=$(echo "$RESULT" | jq -r '.provisioningState // "Unknown"')
-          echo "  domainValidationState=$VS  provisioningState=$PS  (${ELAPSED}s elapsed)"
-          if [ "$VS" = "Approved" ] && [ "$PS" = "Succeeded" ]; then
-            echo "Custom domain certificate is ready."
-            exit 0
-          fi
-          sleep 30
-          ELAPSED=$((ELAPSED + 30))
-        done
-        echo "::warning::AFD cert did not reach Approved/Succeeded within ${TIMEOUT}s"
+      env:
+        FEATURE_NAME: ${{ inputs.feature_name }}
+        RESOURCE_GROUP: ${{ inputs.resource_group }}
+        FRONT_DOOR_NAME: ${{ inputs.front_door_name }}
+        DNS_ZONE_NAME: ${{ inputs.dns_zone_name }}
+        CERT_WAIT_TIMEOUT: ${{ inputs.cert_wait_timeout }}
+      run: bash "${{ github.action_path }}/scripts/wait-for-cert.sh"

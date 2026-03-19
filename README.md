@@ -2,7 +2,9 @@
 
 Creates a DNS CNAME record in the `cust.nisportal.com` Azure DNS zone, pointing `{feature_name}.cust.nisportal.com` at the Front Door endpoint hostname. This triggers Front Door's automatic certificate validation and managed TLS certificate issuance for the custom domain.
 
-The action includes `frontdoor-dns.bicep` and `scripts/create-dns-records.sh` — the calling repo does not need any Bicep files or scripts.
+After the DNS records are created, the action waits for the Azure Front Door custom domain certificate to be fully provisioned and TLS connectivity to be confirmed before completing.
+
+The action includes `frontdoor-dns.bicep`, `scripts/create-dns-records.sh`, and `scripts/wait-for-cert.sh` — the calling repo does not need any Bicep files or scripts.
 
 ## Prerequisites
 
@@ -11,12 +13,15 @@ The action includes `frontdoor-dns.bicep` and `scripts/create-dns-records.sh` �
 
 ## Inputs
 
-| Input | Required | Description |
-|-------|----------|-------------|
-| `feature_name` | Yes | Feature environment name, e.g. `feature-1234`. Creates the record `feature-1234` in the `cust.nisportal.com` zone. |
-| `fd_hostname` | Yes | Front Door endpoint hostname without `https://` — use the `fd_hostname` output from `deploy-feature` |
-| `dns_zone_resource_group` | Yes | Resource group containing the `cust.nisportal.com` DNS zone |
-| `resource_group` | Yes | Resource group containing the Front Door profile |
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `feature_name` | Yes | — | Feature environment name, e.g. `feature-1234`. Creates the record `feature-1234` in the `cust.nisportal.com` zone. |
+| `fd_hostname` | Yes | — | Front Door endpoint hostname without `https://` — use the `fd_hostname` output from `deploy-feature` |
+| `dns_zone_resource_group` | Yes | — | Resource group containing the `cust.nisportal.com` DNS zone |
+| `resource_group` | Yes | — | Resource group containing the Front Door profile |
+| `front_door_name` | No | `fd-nisportal` | Name of the shared Azure Front Door profile |
+| `dns_zone_name` | No | `cust.nisportal.com` | DNS zone name used to construct the custom domain resource name and the URL checked for TLS readiness |
+| `cert_wait_timeout` | No | `1800` | Seconds to wait for the AFD managed certificate to become ready. Set to `0` to skip the wait step entirely. |
 
 ## Usage
 
@@ -38,9 +43,15 @@ Also creates the `_dnsauth.feature-1234.cust.nisportal.com` TXT record required 
 
 The CNAME is used by Front Door to validate domain ownership and issue a managed TLS certificate. The record TTL is 300 seconds.
 
+After creating the DNS records, the action polls Azure Front Door until the custom domain's `domainValidationState` is `Approved`, `provisioningState` is `Succeeded`, and an HTTP response is received from `https://<feature_name>.<dns_zone_name>/health`. Diagnostic output (DNS resolution, AFD domain association, verbose curl) is emitted every 2 minutes to aid troubleshooting. A workflow warning is emitted if the certificate is not ready before `cert_wait_timeout` expires.
+
 ## Development
 
-The action logic lives in `scripts/create-dns-records.sh`. The script reads its inputs from environment variables (`FEATURE_NAME`, `FD_HOSTNAME`, `DNS_ZONE_RG`, `RESOURCE_GROUP`, `ACTION_PATH`), making it straightforward to test independently of GitHub Actions.
+The DNS record creation logic lives in `scripts/create-dns-records.sh`. The certificate-waiting logic lives in `scripts/wait-for-cert.sh`. Both scripts read their inputs from environment variables, making them straightforward to test independently of GitHub Actions.
+
+`create-dns-records.sh` env vars: `FEATURE_NAME`, `FD_HOSTNAME`, `DNS_ZONE_RG`, `RESOURCE_GROUP`, `ACTION_PATH`
+
+`wait-for-cert.sh` env vars: `FEATURE_NAME`, `RESOURCE_GROUP`, `FRONT_DOOR_NAME`, `DNS_ZONE_NAME`, `CERT_WAIT_TIMEOUT`
 
 ### Running tests locally
 
