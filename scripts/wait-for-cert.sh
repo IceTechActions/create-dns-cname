@@ -28,32 +28,6 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
   PS=$(echo "$RESULT" | jq -r '.provisioningState // "Unknown"')
   
   if [ "$VS" = "Approved" ] && [ "$PS" = "Succeeded" ]; then
-    # Add diagnostic checks every 2 minutes (or at 120s for first check)
-    if [ $ELAPSED -eq 120 ] || [ $((ELAPSED % 120)) -eq 0 ]; then
-      echo "  === Diagnostic check at ${ELAPSED}s ==="
-      
-      # DNS resolution check
-      DNS_RESULT=$(dig +short "${FEATURE}.${DNS_ZONE}" 2>/dev/null || echo "")
-      if [ -z "$DNS_RESULT" ]; then
-        echo "  WARNING: DNS not resolving for ${FEATURE}.${DNS_ZONE}"
-      else
-        echo "  DNS resolves to: $DNS_RESULT"
-      fi
-      
-      # Check if custom domain is associated with a route
-      ROUTE_CHECK=$(az afd custom-domain show \
-        --profile-name "$FD" \
-        --resource-group "$RG" \
-        --custom-domain-name "$CUSTOM_DOMAIN_NAME" \
-        --query "azureDnsZone" -o tsv 2>/dev/null || echo "")
-      echo "  Custom domain DNS zone: ${ROUTE_CHECK:-not configured}"
-      
-      # Try verbose curl to see what's failing
-      echo "  Attempting connection to ${QA_URL}/health..."
-      curl -v --max-time 10 "${QA_URL}/health" 2>&1 | head -n 20 || true
-      echo "  === End diagnostic check ==="
-    fi
-    
     HTTP_CODE=$(curl --silent --output /dev/null --write-out "%{http_code}" \
       --max-time 15 "${QA_URL}/health" 2>/dev/null || true)
     echo "  domainValidationState=$VS  provisioningState=$PS  tls=${HTTP_CODE:-000}  (${ELAPSED}s elapsed)"
