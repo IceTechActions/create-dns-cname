@@ -10,6 +10,7 @@ setup() {
   export FD_HOSTNAME="my-endpoint.z01.azurefd.net"
   export DNS_ZONE_RG="dns-rg"
   export RESOURCE_GROUP="feature-rg"
+  export DNS_ZONE_NAME="cust.nisportal.com"
   export ACTION_PATH="$BATS_TEST_DIRNAME/.."
 
   # Capture az calls for assertions
@@ -65,6 +66,14 @@ teardown() {
   grep -q "dnsZoneName=cust.nisportal.com" "$AZ_CALLS_FILE"
 }
 
+@test "script uses DNS_ZONE_NAME env var for DNS zone" {
+  export DNS_ZONE_NAME="custom.example.com"
+  run bash "$SCRIPT"
+  [ "$status" -eq 0 ]
+  grep -q "dnsZoneName=custom.example.com" "$AZ_CALLS_FILE"
+  grep -q "zone-name custom.example.com" "$AZ_CALLS_FILE"
+}
+
 @test "script creates _dnsauth TXT record" {
   run bash "$SCRIPT"
   grep -q "record-set-name _dnsauth.feature-1234" "$AZ_CALLS_FILE"
@@ -92,6 +101,12 @@ teardown() {
 
 @test "script fails when FD_HOSTNAME is not set" {
   unset FD_HOSTNAME
+  run bash "$SCRIPT"
+  [ "$status" -ne 0 ]
+}
+
+@test "script fails when DNS_ZONE_NAME is not set" {
+  unset DNS_ZONE_NAME
   run bash "$SCRIPT"
   [ "$status" -ne 0 ]
 }
