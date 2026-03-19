@@ -40,6 +40,7 @@ runs:
         FD_HOSTNAME: ${{ inputs.fd_hostname }}
         DNS_ZONE_RG: ${{ inputs.dns_zone_resource_group }}
         RESOURCE_GROUP: ${{ inputs.resource_group }}
+        DNS_ZONE_NAME: ${{ inputs.dns_zone_name }}
         ACTION_PATH: ${{ github.action_path }}
       run: bash "${{ github.action_path }}/scripts/create-dns-records.sh"
 

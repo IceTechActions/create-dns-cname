@@ -6,12 +6,14 @@
 # Required environment variables:
 #   FEATURE_NAME   - Feature environment name, e.g. feature-1234
 #   FD_HOSTNAME    - Front Door endpoint hostname (without https://)
-#   DNS_ZONE_RG    - Resource group containing the cust.nisportal.com DNS zone
+#   DNS_ZONE_RG    - Resource group containing the DNS zone
+#   DNS_ZONE_NAME  - DNS zone name (e.g. cust.nisportal.com)
 #   RESOURCE_GROUP - Resource group containing the Front Door profile
 #   ACTION_PATH    - Path to the action directory (contains frontdoor-dns.bicep)
 set -euo pipefail
 
-DNS_ZONE="cust.nisportal.com"
+: "${DNS_ZONE_NAME:?DNS_ZONE_NAME must be set and non-empty}"
+DNS_ZONE="${DNS_ZONE_NAME}"
 
 # ── Step 1: Deploy CNAME record via Bicep ────────────────────────────────────
 az deployment group create \
